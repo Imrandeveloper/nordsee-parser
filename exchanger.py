@@ -66,6 +66,7 @@ class Exchanger:
         logging.info('Open page')
         self.browser.visit(self.vacancy_url)
         self.browser.find_by_id('btn_online_application').click()
+        return self.browser.html
 
     def _fill_inputs(self):
         """
@@ -95,6 +96,7 @@ class Exchanger:
         self.browser.fill('bewerbung_form[geburtsdatum]',
                           self.user_data['birthday'])
         self.browser.find_by_id('handy').last.click()
+        return True
 
     def _select_sex(self):
         """
@@ -155,6 +157,7 @@ class Exchanger:
         self._select_nationality()
         self._select_source()
         self._select_german_level()
+        return True
 
     def _download_file(self):
         """
@@ -192,6 +195,7 @@ class Exchanger:
         # wait until the file is uploaded
         while self.browser.is_element_not_present_by_css('.modal_link'):
             time.sleep(1)
+        return True
 
     def _click_agree(self):
         """
@@ -202,6 +206,7 @@ class Exchanger:
             time.sleep(1)
         self.browser.find_by_id('agreement').find_by_css(
             '.agreement_new').last.click()
+        return True
 
     def _submit(self):
         """
@@ -238,11 +243,11 @@ class Exchanger:
         else:
             logging.info('Submitted successfully')
         self.browser.quit()
+        return True
 
 
 if __name__ == "__main__":
-    test_url = 'https://karriere.nordsee.com/de/' \
-               'Verkaeufer-Mitarbeiter-Restaurant-mw-in-Berlin-de-j2496.html'
+    test_url = 'https://karriere.nordsee.com/de/Verkaeufer-Mitarbeiter-Restaurant-mw-in-Berlin-de-j2496.html'
     test_data = json.load(open('nordsee_test.json'))
-    parser = Exchanger(user_data=test_data, vacancy_url=test_url)
-    parser.run()
+    exchanger = Exchanger(user_data=test_data, vacancy_url=test_url)
+    exchanger.run()

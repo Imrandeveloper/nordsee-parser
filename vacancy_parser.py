@@ -38,18 +38,25 @@ class NordseeParser:
             'verify': False,
         }
 
+    def _get_page_content(self, url, params=None):
+        try:
+            return rq.get(url, params=params, **self._request_settings).content
+        except Exception as e:
+            logging.info('Can not get page: {}'.format(str(e)))
+
     def _get_pages_amount(self):
         """
         Get vacancy pages amount
         :return: int
         """
-        r = rq.get(self.VACANCY_LIST_URL, **self._request_settings)
-        d = pq(r.text)
+        content = self._get_page_content(url=self.VACANCY_LIST_URL)
+        d = pq(content)
+
         pages_amount = int(d('.nav_item:last a').text())
         logging.info('Count of vacancies pages is {}'.format(pages_amount))
         return pages_amount
 
-    def _get_common_vacancy_info(self, page=None):
+    def _get_common_vacancy_info(self, page=0):
         """
         Get common vacancy info from vacancy list page
         :param page: int page number
@@ -57,9 +64,8 @@ class NordseeParser:
         """
         vacancy_info_list = []
         params = {'start': page * 20}
-        r = rq.get(self.VACANCY_LIST_URL, params=params,
-                   **self._request_settings)
-        d = pq(r.text)
+        content = self._get_page_content(url=self.VACANCY_LIST_URL, params=params)
+        d = pq(content)
 
         rows = d('#joboffers tbody tr').items()
         for row in rows:
@@ -79,10 +85,10 @@ class NordseeParser:
         :param vacancy_url: vacancy url
         :return: dict with vacancy data
         """
-        r = rq.get(vacancy_url, **self._request_settings)
-        logging.info('Vacancies data got')
+        content = self._get_page_content(url=vacancy_url)
+        d = pq(content)
 
-        d = pq(r.text)
+        logging.info('Vacancies data got')
         content = d('.emp_nr_innerframe')
 
         search_from_el = d('.trenner')
