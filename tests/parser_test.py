@@ -48,9 +48,13 @@ class ParserTestCase(unittest.TestCase):
     Parser tests
     """
     def setUp(self):
+        self.parser = NordseeParser()
         # check vacancies list file
         if not os.path.exists(LIST_PAGE_FILEPATH):
             get_test_page(page_type='list', url=LIST_PAGE_URL)
+
+        # prepare test content from file
+        self.list_page_content = pq(filename=LIST_PAGE_FILEPATH)
 
         # check vacancies details file
         if not os.path.exists(VACANCY_PAGE_FILEPATH):
@@ -61,10 +65,8 @@ class ParserTestCase(unittest.TestCase):
             vacancy_url = result[0]['url']
             get_test_page(url=vacancy_url)
 
-        # prepare test content from files
-        self.list_page_content = pq(filename=LIST_PAGE_FILEPATH)
+        # prepare test content from file
         self.vacancy_page_content = pq(filename=VACANCY_PAGE_FILEPATH)
-        self.parser = NordseeParser()
 
     def test_get_pages_amount(self):
         """
