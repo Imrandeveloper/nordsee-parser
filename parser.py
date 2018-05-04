@@ -6,7 +6,7 @@ from lxml import etree
 from pyquery import PyQuery as pq
 from fake_useragent import UserAgent
 
-logging.basicConfig(filename='logs.log', level=logging.DEBUG)
+logging.basicConfig(filename='logs.log', level=logging.INFO)
 
 
 class NordseeParser:

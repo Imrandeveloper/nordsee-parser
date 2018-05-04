@@ -1,5 +1,5 @@
 venv:
-    virtualenv -p python3.6 venv
+	virtualenv -p python3.6 venv
 
 requirements:
-    pip install -r requirements.txt
+	pip install -r requirements.txt
