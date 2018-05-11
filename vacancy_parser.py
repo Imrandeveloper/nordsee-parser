@@ -1,5 +1,6 @@
 import os
 import logging
+import re
 import requests as rq
 
 from lxml import etree
@@ -64,13 +65,23 @@ class NordseeParser:
         """
         vacancy_info_list = []
         params = {'start': page * 20}
-        content = self._get_page_content(url=self.VACANCY_LIST_URL, params=params)
+        content = self._get_page_content(url=self.VACANCY_LIST_URL,
+                                         params=params)
         d = pq(content)
 
         rows = d('#joboffers tbody tr').items()
         for row in rows:
+            url = row.find('.real_table_col1 a').attr('href')
+            identifier = re.match(r'(.)*-j(?P<id>\d+).html', url)
+            try:
+                identifier = identifier.group('id')
+            except Exception as e:
+                logging.info(
+                    'Can not get identifier from url {}'.format(str(e)))
+
             common_info = {
-                'url': row.find('.real_table_col1 a').attr('href'),
+                'url': url,
+                'identifier': identifier,
                 'title': row.find('.real_table_col1 a').text(),
                 'location': row.find('.real_table_col2').text(),
                 'position': row.find('.real_table_col4').text()
@@ -95,12 +106,15 @@ class NordseeParser:
         details = search_from_el.nextAll().filter(
             lambda i, this: not pq(this).hasClass('abschluss'))
 
+        introduction = content.find('.einleitungstext').text()
+        short_description = content.find('.mitteltext').text()
+        details = details.text()
+        conclusion = content.find('.abschluss').text()
+
         vacancy_data = {
-            'introduction': content.find('.einleitungstext').text(),
-            'short_description': content.find('.mitteltext').text(),
-            'details': details.text(),
-            'conclusion': content.find('.abschluss').text()
+            'description': introduction + short_description + details + conclusion
         }
+
         return vacancy_data
 
     def _save_to_xml(self, vacancy_list):
@@ -111,19 +125,26 @@ class NordseeParser:
         """
         root = etree.Element('vacancies')
         for data in vacancy_list:
-            vacancy = etree.SubElement(root, 'vacancy')
-            etree.SubElement(vacancy, 'url').text = data['url']
+            vacancy = etree.SubElement(root, 'position')
+            etree.SubElement(vacancy, 'link').text = data['url']
+            etree.SubElement(vacancy, 'identifier').text = data['identifier']
             etree.SubElement(vacancy, 'title').text = data['title']
-            etree.SubElement(vacancy, 'location').text = data['location']
-            etree.SubElement(vacancy, 'position').text = data['position']
-            etree.SubElement(vacancy, 'introduction').text = \
-                data['introduction']
-            etree.SubElement(vacancy, 'short_description').text = \
-                data['short_description']
-            etree.SubElement(vacancy, 'details').text = \
-                data['details']
-            etree.SubElement(vacancy, 'conclusion').text = \
-                data['conclusion']
+            etree.SubElement(vacancy, 'start_date')
+            etree.SubElement(vacancy, 'kind')
+            etree.SubElement(vacancy, 'description').text = \
+                etree.CDATA(data['description'])
+            etree.SubElement(vacancy, 'top_location').text = data['location']
+            locations = etree.SubElement(vacancy, 'locations')
+            etree.SubElement(locations, 'location').text = data['location']
+            etree.SubElement(vacancy, 'images')
+            company = etree.SubElement(vacancy, 'company')
+            etree.SubElement(company, 'name').text = 'NORDSEE GmbH'
+            address = etree.SubElement(company, 'address')
+            etree.SubElement(address, 'street')
+            etree.SubElement(address, 'zip')
+            etree.SubElement(address, 'city').text = data['location']
+            etree.SubElement(vacancy, 'contact_email').text = \
+                'fallback@jobufo.com'
 
         current_dir = os.path.dirname(os.path.realpath(__file__))
         dir_to_export = os.path.join(current_dir, self.OUTPUT_DIR)
